@@ -19,7 +19,7 @@ int pid_max_yaw = 400;                     //Maximum output of the PID-controlle
 byte eeprom_data[36];
 volatile int receiver_input_channel_1, receiver_input_channel_2, receiver_input_channel_3, receiver_input_channel_4;
 int battery_voltage;
-int start, gyro_address;
+int gyro_address;
 bool gyroCalibrated = false;
 int receiver_input[5];
 int acc_axis[4], gyro_axis[4];
@@ -37,7 +37,6 @@ void setup()
   //Serial.begin(57600);
   //Copy the EEPROM data for fast access data.
   for(int i = 0; i <= 35; i++)eeprom_data[i] = EEPROM.read(i);
-  start = 0;
   gyro_address = eeprom_data[32];                                           //Store the gyro address in the variable.
 
   Wire.begin();                                                             //Start the I2C as master.
@@ -94,21 +93,21 @@ void setup()
   PCMSK0 |= (1 << PCINT3);                                                  //Set PCINT3 (digital input 11)to trigger an interrupt on state change.
 
   //Wait until the receiver is active and the throtle is set to the lower position.
+  int i = 0;
   while(receiver_input_channel_3 < 990 || receiver_input_channel_3 > 1020 || receiver_input_channel_4 < 1400){
     receiver_input_channel_3 = convert_receiver_channel(3);                 //Convert the actual receiver signals for throttle to the standard 1000 - 2000us
     receiver_input_channel_4 = convert_receiver_channel(4);                 //Convert the actual receiver signals for yaw to the standard 1000 - 2000us
-    start ++;                                                               //While waiting increment start whith every loop.
+    i++;                                                               //While waiting increment start whith every loop.
     //We don't want the esc's to be beeping annoyingly. So let's give them a 1000us puls while waiting for the receiver inputs.
     PORTD |= B11110000;                                                     //Set digital poort 4, 5, 6 and 7 high.
     delayMicroseconds(1000);                                                //Wait 1000us.
     PORTD &= B00001111;                                                     //Set digital poort 4, 5, 6 and 7 low.
     delay(3);                                                               //Wait 3 milliseconds before the next loop.
-    if(start == 125){                                                       //Every 125 loops (500ms).
+    if(i == 125){                                                       //Every 125 loops (500ms).
       digitalWrite(12, !digitalRead(12));                                   //Change the led status.
-      start = 0;                                                            //Start again at 0.
+      i = 0;                                                            //Start again at 0.
     }
   }
-  start = 0;                                                                //Set start back to 0.
 
   //Load the battery voltage to the battery_voltage variable.
   //65 is the voltage compensation for the diode.
@@ -131,6 +130,7 @@ float roll_level_adjust, pitch_level_adjust;
 unsigned long timer_channel_1, timer_channel_2, timer_channel_3, timer_channel_4, esc_loop_timer;
 float angle_roll_acc, angle_pitch_acc, angle_pitch, angle_roll;
 boolean gyro_angles_set;
+int start = 0;
 
 void loop()
 {
