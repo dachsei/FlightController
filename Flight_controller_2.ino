@@ -21,7 +21,8 @@ byte eeprom_data[36];
 volatile int receiver_input_channel_1, receiver_input_channel_2, receiver_input_channel_3, receiver_input_channel_4;
 int esc_1, esc_2, esc_3, esc_4;
 int throttle, battery_voltage;
-int cal_int, start, gyro_address;
+int start, gyro_address;
+bool gyroCalibrated = false;
 int receiver_input[5];
 int temperature;
 int acc_axis[4], gyro_axis[4];
@@ -44,8 +45,8 @@ void setup()
 {
   //Serial.begin(57600);
   //Copy the EEPROM data for fast access data.
-  for(start = 0; start <= 35; start++)eeprom_data[start] = EEPROM.read(start);
-  start = 0;                                                                //Set start back to zero.
+  for(int i = 0; i <= 35; i++)eeprom_data[i] = EEPROM.read(i);
+  start = 0;
   gyro_address = eeprom_data[32];                                           //Store the gyro address in the variable.
 
   Wire.begin();                                                             //Start the I2C as master.
@@ -68,7 +69,7 @@ void setup()
 
   set_gyro_registers();                                                     //Set the specific gyro registers.
 
-  for (cal_int = 0; cal_int < 1250 ; cal_int ++){                           //Wait 5 seconds before continuing.
+  for (int i = 0; i < 1250; i++){                           //Wait 5 seconds before continuing.
     PORTD |= B11110000;                                                     //Set digital poort 4, 5, 6 and 7 high.
     delayMicroseconds(1000);                                                //Wait 1000us.
     PORTD &= B00001111;                                                     //Set digital poort 4, 5, 6 and 7 low.
@@ -76,8 +77,8 @@ void setup()
   }
 
   //Let's take multiple gyro data samples so we can determine the average gyro offset (calibration).
-  for (cal_int = 0; cal_int < 2000 ; cal_int ++){                           //Take 2000 readings for calibration.
-    if(cal_int % 15 == 0)digitalWrite(12, !digitalRead(12));                //Change the led status to indicate calibration.
+  for (int i = 0; i < 2000; i++){                           //Take 2000 readings for calibration.
+    if(i % 15 == 0)digitalWrite(12, !digitalRead(12));                //Change the led status to indicate calibration.
     gyro_signalen();                                                        //Read the gyro output.
     gyro_axis_cal[1] += gyro_axis[1];                                       //Ad roll value to gyro_roll_cal.
     gyro_axis_cal[2] += gyro_axis[2];                                       //Ad pitch value to gyro_pitch_cal.
@@ -88,6 +89,8 @@ void setup()
     PORTD &= B00001111;                                                     //Set digital poort 4, 5, 6 and 7 low.
     delay(3);                                                               //Wait 3 milliseconds before the next loop.
   }
+  gyroCalibrated = true;
+  
   //Now that we have 2000 measures, we need to devide by 2000 to get the average gyro offset.
   gyro_axis_cal[1] /= 2000;                                                 //Divide the roll total by 2000.
   gyro_axis_cal[2] /= 2000;                                                 //Divide the pitch total by 2000.
@@ -365,7 +368,7 @@ void gyro_signalen()
     gyro_axis[3] = Wire.read()<<8|Wire.read();                              //Read high and low part of the angular data.
   }
 
-  if(cal_int == 2000){
+  if(gyroCalibrated){
     gyro_axis[1] -= gyro_axis_cal[1];                                       //Only compensate after the calibration.
     gyro_axis[2] -= gyro_axis_cal[2];                                       //Only compensate after the calibration.
     gyro_axis[3] -= gyro_axis_cal[3];                                       //Only compensate after the calibration.
