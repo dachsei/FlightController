@@ -16,30 +16,21 @@ float pid_i_gain_yaw = 0.02;               //Gain setting for the pitch I-contro
 float pid_d_gain_yaw = 0.0;                //Gain setting for the pitch D-controller.
 int pid_max_yaw = 400;                     //Maximum output of the PID-controller (+/-)
 
-byte last_channel_1, last_channel_2, last_channel_3, last_channel_4;
 byte eeprom_data[36];
 volatile int receiver_input_channel_1, receiver_input_channel_2, receiver_input_channel_3, receiver_input_channel_4;
-int esc_1, esc_2, esc_3, esc_4;
-int throttle, battery_voltage;
+int battery_voltage;
 int start, gyro_address;
 bool gyroCalibrated = false;
 int receiver_input[5];
-int temperature;
 int acc_axis[4], gyro_axis[4];
-float roll_level_adjust, pitch_level_adjust;
 
 long acc_x, acc_y, acc_z, acc_total_vector;
-unsigned long timer_channel_1, timer_channel_2, timer_channel_3, timer_channel_4, esc_loop_timer;
-unsigned long timer_1, timer_2, timer_3, timer_4, current_time;
-unsigned long loop_timer;
 double gyro_pitch, gyro_roll, gyro_yaw;
+unsigned long loop_timer;
 double gyro_axis_cal[4];
-float pid_error_temp;
 float pid_i_mem_roll, pid_roll_setpoint, gyro_roll_input, pid_output_roll, pid_last_roll_d_error;
 float pid_i_mem_pitch, pid_pitch_setpoint, gyro_pitch_input, pid_output_pitch, pid_last_pitch_d_error;
 float pid_i_mem_yaw, pid_yaw_setpoint, gyro_yaw_input, pid_output_yaw, pid_last_yaw_d_error;
-float angle_roll_acc, angle_pitch_acc, angle_pitch, angle_roll;
-boolean gyro_angles_set;
 
 void setup()
 {
@@ -133,6 +124,13 @@ void setup()
   //When everything is done, turn off the led.
   digitalWrite(12,LOW);                                                     //Turn off the warning led.
 }
+
+int esc_1, esc_2, esc_3, esc_4;
+int throttle;
+float roll_level_adjust, pitch_level_adjust;
+unsigned long timer_channel_1, timer_channel_2, timer_channel_3, timer_channel_4, esc_loop_timer;
+float angle_roll_acc, angle_pitch_acc, angle_pitch, angle_roll;
+boolean gyro_angles_set;
 
 void loop()
 {
@@ -294,6 +292,9 @@ void loop()
   }
 }
 
+byte last_channel_1, last_channel_2, last_channel_3, last_channel_4;
+unsigned long timer_1, timer_2, timer_3, timer_4, current_time;
+
 ISR(PCINT0_vect)
 {
   current_time = micros();
@@ -344,6 +345,8 @@ ISR(PCINT0_vect)
   }
 }
 
+int temperature;
+
 void gyro_signalen()
 {
   //Read the MPU-6050
@@ -387,6 +390,8 @@ void gyro_signalen()
   acc_z = acc_axis[eeprom_data[30] & 0b00000011];                           //Set acc_z to the correct axis that was stored in the EEPROM.
   if(eeprom_data[30] & 0b10000000)acc_z *= -1;                              //Invert acc_z if the MSB of EEPROM bit 30 is set.
 }
+
+float pid_error_temp;
 
 void calculate_pid()
 {
