@@ -125,7 +125,7 @@ void setup()
 }
 
 float angle_roll_acc, angle_pitch_acc, angle_pitch, angle_roll;
-int start = 0;
+byte start = 0;
 
 void loop()
 {
