@@ -21,7 +21,7 @@ volatile int receiver_input_channel_1, receiver_input_channel_2, receiver_input_
 int battery_voltage;
 int gyro_address;
 bool gyroCalibrated = false;
-int receiver_input[5];
+uint16_t receiver_input[5];
 int acc_axis[4], gyro_axis[4];
 
 long acc_x, acc_y, acc_z, acc_total_vector;
@@ -287,11 +287,11 @@ void loop()
 }
 
 byte last_channel_1, last_channel_2, last_channel_3, last_channel_4;
-unsigned long timer_1, timer_2, timer_3, timer_4;
+uint16_t timer_1, timer_2, timer_3, timer_4;
 
 ISR(PCINT0_vect)
 {
-	unsigned long current_time = micros();
+	uint16_t current_time = micros();
 	//Channel 1=========================================
 	if(PINB & B00000001){                                                     //Is input 8 high?
 		if(last_channel_1 == 0){                                                //Input 8 changed from 0 to 1.
@@ -426,14 +426,14 @@ void calculate_pid()
 int convert_receiver_channel(byte function)
 {
 	byte channel, reverse;                                                       //First we declare some local variables
-	int low, center, high, actual;
+	int low, center, high;
 	int difference;
 
 	channel = eeprom_data[function + 23] & 0b00000111;                           //What channel corresponds with the specific function
 	if(eeprom_data[function + 23] & 0b10000000)reverse = 1;                      //Reverse channel when most significant bit is set
 	else reverse = 0;                                                            //If the most significant is not set there is no reverse
 
-	actual = receiver_input[channel];                                            //Read the actual receiver value for the corresponding function
+	uint16_t actual = receiver_input[channel];                                            //Read the actual receiver value for the corresponding function
 	low = (eeprom_data[channel * 2 + 15] << 8) | eeprom_data[channel * 2 + 14];  //Store the low value for the specific receiver input channel
 	center = (eeprom_data[channel * 2 - 1] << 8) | eeprom_data[channel * 2 - 2]; //Store the center value for the specific receiver input channel
 	high = (eeprom_data[channel * 2 + 7] << 8) | eeprom_data[channel * 2 + 6];   //Store the high value for the specific receiver input channel
