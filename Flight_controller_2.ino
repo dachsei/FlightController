@@ -287,11 +287,11 @@ void loop()
 }
 
 byte last_channel_1, last_channel_2, last_channel_3, last_channel_4;
-unsigned long timer_1, timer_2, timer_3, timer_4, current_time;
+unsigned long timer_1, timer_2, timer_3, timer_4;
 
 ISR(PCINT0_vect)
 {
-	current_time = micros();
+	unsigned long current_time = micros();
 	//Channel 1=========================================
 	if(PINB & B00000001){                                                     //Is input 8 high?
 		if(last_channel_1 == 0){                                                //Input 8 changed from 0 to 1.
@@ -384,45 +384,43 @@ void gyro_signalen()
 	if(eeprom_data[30] & 0b10000000)acc_z *= -1;                              //Invert acc_z if the MSB of EEPROM bit 30 is set.
 }
 
-float pid_error_temp;
-
 void calculate_pid()
 {
 	//Roll calculations
-	pid_error_temp = gyro_roll_input - pid_roll_setpoint;
-	pid_i_mem_roll += pid_i_gain_roll * pid_error_temp;
+	float pid_roll_error = gyro_roll_input - pid_roll_setpoint;
+	pid_i_mem_roll += pid_i_gain_roll * pid_roll_error;
 	if(pid_i_mem_roll > pid_max_roll)pid_i_mem_roll = pid_max_roll;
 	else if(pid_i_mem_roll < pid_max_roll * -1)pid_i_mem_roll = pid_max_roll * -1;
 
-	pid_output_roll = pid_p_gain_roll * pid_error_temp + pid_i_mem_roll + pid_d_gain_roll * (pid_error_temp - pid_last_roll_d_error);
+	pid_output_roll = pid_p_gain_roll * pid_roll_error + pid_i_mem_roll + pid_d_gain_roll * (pid_roll_error - pid_last_roll_d_error);
 	if(pid_output_roll > pid_max_roll)pid_output_roll = pid_max_roll;
 	else if(pid_output_roll < pid_max_roll * -1)pid_output_roll = pid_max_roll * -1;
 
-	pid_last_roll_d_error = pid_error_temp;
+	pid_last_roll_d_error = pid_roll_error;
 
 	//Pitch calculations
-	pid_error_temp = gyro_pitch_input - pid_pitch_setpoint;
-	pid_i_mem_pitch += pid_i_gain_pitch * pid_error_temp;
+	float pid_pitch_error = gyro_pitch_input - pid_pitch_setpoint;
+	pid_i_mem_pitch += pid_i_gain_pitch * pid_pitch_error;
 	if(pid_i_mem_pitch > pid_max_pitch)pid_i_mem_pitch = pid_max_pitch;
 	else if(pid_i_mem_pitch < pid_max_pitch * -1)pid_i_mem_pitch = pid_max_pitch * -1;
 
-	pid_output_pitch = pid_p_gain_pitch * pid_error_temp + pid_i_mem_pitch + pid_d_gain_pitch * (pid_error_temp - pid_last_pitch_d_error);
+	pid_output_pitch = pid_p_gain_pitch * pid_pitch_error + pid_i_mem_pitch + pid_d_gain_pitch * (pid_pitch_error - pid_last_pitch_d_error);
 	if(pid_output_pitch > pid_max_pitch)pid_output_pitch = pid_max_pitch;
 	else if(pid_output_pitch < pid_max_pitch * -1)pid_output_pitch = pid_max_pitch * -1;
 
-	pid_last_pitch_d_error = pid_error_temp;
+	pid_last_pitch_d_error = pid_pitch_error;
 
 	//Yaw calculations
-	pid_error_temp = gyro_yaw_input - pid_yaw_setpoint;
-	pid_i_mem_yaw += pid_i_gain_yaw * pid_error_temp;
+	float pid_yaw_error = gyro_yaw_input - pid_yaw_setpoint;
+	pid_i_mem_yaw += pid_i_gain_yaw * pid_yaw_error;
 	if(pid_i_mem_yaw > pid_max_yaw)pid_i_mem_yaw = pid_max_yaw;
 	else if(pid_i_mem_yaw < pid_max_yaw * -1)pid_i_mem_yaw = pid_max_yaw * -1;
 
-	pid_output_yaw = pid_p_gain_yaw * pid_error_temp + pid_i_mem_yaw + pid_d_gain_yaw * (pid_error_temp - pid_last_yaw_d_error);
+	pid_output_yaw = pid_p_gain_yaw * pid_yaw_error + pid_i_mem_yaw + pid_d_gain_yaw * (pid_yaw_error - pid_last_yaw_d_error);
 	if(pid_output_yaw > pid_max_yaw)pid_output_yaw = pid_max_yaw;
 	else if(pid_output_yaw < pid_max_yaw * -1)pid_output_yaw = pid_max_yaw * -1;
 
-	pid_last_yaw_d_error = pid_error_temp;
+	pid_last_yaw_d_error = pid_yaw_error;
 }
 
 int convert_receiver_channel(byte function)
