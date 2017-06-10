@@ -26,7 +26,7 @@ int acc_axis[4], gyro_axis[4];
 
 long acc_x, acc_y, acc_z, acc_total_vector;
 double gyro_pitch, gyro_roll, gyro_yaw;
-unsigned long loop_timer;
+uint16_t loop_timer;
 double gyro_axis_cal[4];
 float pid_i_mem_roll, pid_roll_setpoint, gyro_roll_input, pid_output_roll, pid_last_roll_d_error;
 float pid_i_mem_pitch, pid_pitch_setpoint, gyro_pitch_input, pid_output_pitch, pid_last_pitch_d_error;
@@ -260,11 +260,11 @@ void loop()
 		esc_4 = 1000;                                                           //If start is not 2 keep a 1000us pulse for ess-4.
 	}
 
-	if(micros() - loop_timer > 4050)digitalWrite(12, HIGH);                   //Turn on the LED if the loop time exceeds 4050us.
+	if((uint16_t)micros() - loop_timer > 4050)digitalWrite(12, HIGH);                   //Turn on the LED if the loop time exceeds 4050us.
 
 	//All the information for controlling the motor's is available.
 	//The refresh rate is 250Hz. That means the esc's need there pulse every 4ms.
-	while(micros() - loop_timer < 4000);                                      //We wait until 4000us are passed.
+	while((uint16_t)micros() - loop_timer < 4000);                                      //We wait until 4000us are passed.
 	loop_timer = micros();                                                    //Set the timer for the next loop.
 
 	PORTD |= B11110000;                                                       //Set digital outputs 4,5,6 and 7 high.
