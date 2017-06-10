@@ -225,7 +225,7 @@ void loop()
 	if(battery_voltage < 1000 && battery_voltage > 600)digitalWrite(12, HIGH);
 
 
-	int esc_1, esc_2, esc_3, esc_4;
+	uint16_t esc_1, esc_2, esc_3, esc_4;
 	int throttle = receiver_input_channel_3;                                      //We need the throttle signal as a base signal.
 
 	if (start == 2){                                                          //The motors are started.
@@ -275,10 +275,10 @@ void loop()
 
 	while(PORTD >= 16){                                                       //Stay in this loop until output 4,5,6 and 7 are low.
 		uint16_t onTime = micros() - loop_timer;                                              //Read the current time.
-		if(esc_1 >= onTime)PORTD &= B11101111;                //Set digital output 4 to low if the time is expired.
-		if(esc_2 >= onTime)PORTD &= B11011111;                //Set digital output 5 to low if the time is expired.
-		if(esc_3 >= onTime)PORTD &= B10111111;                //Set digital output 6 to low if the time is expired.
-		if(esc_4 >= onTime)PORTD &= B01111111;                //Set digital output 7 to low if the time is expired.
+		if(onTime >= esc_1)PORTD &= B11101111;                //Set digital output 4 to low if the time is expired.
+		if(onTime >= esc_2)PORTD &= B11011111;                //Set digital output 5 to low if the time is expired.
+		if(onTime >= esc_3)PORTD &= B10111111;                //Set digital output 6 to low if the time is expired.
+		if(onTime >= esc_4)PORTD &= B01111111;                //Set digital output 7 to low if the time is expired.
 	}
 }
 
