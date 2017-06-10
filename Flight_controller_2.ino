@@ -121,7 +121,7 @@ void setup()
 	//14.80 ~ 5V -> 1480/1023 = 1.4467
 	battery_voltage = (analogRead(0) + 65) * 1.4467;
 
-	loop_timer = micros();                                                    //Set the timer for the next loop.
+	loop_timer = TCNT1;                                                    //Set the timer for the next loop.
 
 	//When everything is done, turn off the led.
 	digitalWrite(12,LOW);                                                     //Turn off the warning led.
@@ -263,12 +263,12 @@ void loop()
 		esc_4 = 1000;                                                           //If start is not 2 keep a 1000us pulse for ess-4.
 	}
 
-	if((uint16_t)micros() - loop_timer > 4050)digitalWrite(12, HIGH);                   //Turn on the LED if the loop time exceeds 4050us.
+	if(TCNT1 - loop_timer > (4050<<1))digitalWrite(12, HIGH);                   //Turn on the LED if the loop time exceeds 4050us.
 
 	//All the information for controlling the motor's is available.
 	//The refresh rate is 250Hz. That means the esc's need there pulse every 4ms.
-	while((uint16_t)micros() - loop_timer < 4000);                                      //We wait until 4000us are passed.
-	loop_timer = micros();                                                    //Set the timer for the next loop.
+	while(TCNT1 - loop_timer < (4000<<1));                                      //We wait until 4000us are passed.
+	loop_timer = TCNT1;                                                    //Set the timer for the next loop.
 
 	uint16_t esc_timer = TCNT1;
 	PORTD |= B11110000;                                                       //Set digital outputs 4,5,6 and 7 high.
