@@ -270,6 +270,7 @@ void loop()
 	while((uint16_t)micros() - loop_timer < 4000);                                      //We wait until 4000us are passed.
 	loop_timer = micros();                                                    //Set the timer for the next loop.
 
+	uint16_t esc_timer = TCNT1;
 	PORTD |= B11110000;                                                       //Set digital outputs 4,5,6 and 7 high.
 	
 	//There is always 1000us of spare time. So let's do something usefull that is very time consuming.
@@ -277,7 +278,7 @@ void loop()
 	gyro_signalen();
 
 	while(PORTD >= 16){                                                       //Stay in this loop until output 4,5,6 and 7 are low.
-		uint16_t onTime = micros() - loop_timer;                                              //Read the current time.
+		uint16_t onTime = (TCNT1 - esc_timer)>>1;                                              //Read the current time.
 		if(onTime >= esc_1)PORTD &= B11101111;                //Set digital output 4 to low if the time is expired.
 		if(onTime >= esc_2)PORTD &= B11011111;                //Set digital output 5 to low if the time is expired.
 		if(onTime >= esc_3)PORTD &= B10111111;                //Set digital output 6 to low if the time is expired.
