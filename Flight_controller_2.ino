@@ -268,21 +268,17 @@ void loop()
 	loop_timer = micros();                                                    //Set the timer for the next loop.
 
 	PORTD |= B11110000;                                                       //Set digital outputs 4,5,6 and 7 high.
-	unsigned long timer_channel_1 = esc_1 + loop_timer;                                     //Calculate the time of the faling edge of the esc-1 pulse.
-	unsigned long timer_channel_2 = esc_2 + loop_timer;                                     //Calculate the time of the faling edge of the esc-2 pulse.
-	unsigned long timer_channel_3 = esc_3 + loop_timer;                                     //Calculate the time of the faling edge of the esc-3 pulse.
-	unsigned long timer_channel_4 = esc_4 + loop_timer;                                     //Calculate the time of the faling edge of the esc-4 pulse.
-
+	
 	//There is always 1000us of spare time. So let's do something usefull that is very time consuming.
 	//Get the current gyro and receiver data and scale it to degrees per second for the pid calculations.
 	gyro_signalen();
 
 	while(PORTD >= 16){                                                       //Stay in this loop until output 4,5,6 and 7 are low.
-		unsigned long esc_loop_timer = micros();                                              //Read the current time.
-		if(timer_channel_1 <= esc_loop_timer)PORTD &= B11101111;                //Set digital output 4 to low if the time is expired.
-		if(timer_channel_2 <= esc_loop_timer)PORTD &= B11011111;                //Set digital output 5 to low if the time is expired.
-		if(timer_channel_3 <= esc_loop_timer)PORTD &= B10111111;                //Set digital output 6 to low if the time is expired.
-		if(timer_channel_4 <= esc_loop_timer)PORTD &= B01111111;                //Set digital output 7 to low if the time is expired.
+		uint16_t onTime = micros() - loop_timer;                                              //Read the current time.
+		if(esc_1 >= onTime)PORTD &= B11101111;                //Set digital output 4 to low if the time is expired.
+		if(esc_2 >= onTime)PORTD &= B11011111;                //Set digital output 5 to low if the time is expired.
+		if(esc_3 >= onTime)PORTD &= B10111111;                //Set digital output 6 to low if the time is expired.
+		if(esc_4 >= onTime)PORTD &= B01111111;                //Set digital output 7 to low if the time is expired.
 	}
 }
 
