@@ -40,8 +40,11 @@ void setup()
 	gyro_address = eeprom_data[32];                                           //Store the gyro address in the variable.
 
 	Wire.begin();                                                             //Start the I2C as master.
-
 	TWBR = 12;                                                                //Set the I2C clock speed to 400kHz.
+	
+	TCCR1A = 0;
+	TCCR1B = 1 << 1;
+	TIMSK1 = 0;
 
 	//Arduino (Atmega) pins default to inputs, so they don't need to be explicitly declared as inputs.
 	DDRD |= B11110000;                                                        //Configure digital poort 4, 5, 6 and 7 as output.
@@ -287,7 +290,7 @@ uint16_t timer_1, timer_2, timer_3, timer_4;
 
 ISR(PCINT0_vect)
 {
-	uint16_t current_time = micros();
+	uint16_t current_time = TCNT1;
 	//Channel 1=========================================
 	if(PINB & B00000001){                                                     //Is input 8 high?
 		if(last_channel_1 == 0){                                                //Input 8 changed from 0 to 1.
@@ -297,7 +300,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_1 == 1){                                             //Input 8 is not high and changed from 1 to 0.
 		last_channel_1 = 0;                                                     //Remember current input state.
-		receiver_input[1] = current_time - timer_1;                             //Channel 1 is current_time - timer_1.
+		receiver_input[1] = (current_time - timer_1)>>1;                             //Channel 1 is current_time - timer_1.
 	}
 	//Channel 2=========================================
 	if(PINB & B00000010 ){                                                    //Is input 9 high?
@@ -308,7 +311,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_2 == 1){                                             //Input 9 is not high and changed from 1 to 0.
 		last_channel_2 = 0;                                                     //Remember current input state.
-		receiver_input[2] = current_time - timer_2;                             //Channel 2 is current_time - timer_2.
+		receiver_input[2] = (current_time - timer_2)>>1;                             //Channel 2 is current_time - timer_2.
 	}
 	//Channel 3=========================================
 	if(PINB & B00000100 ){                                                    //Is input 10 high?
@@ -319,7 +322,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_3 == 1){                                             //Input 10 is not high and changed from 1 to 0.
 		last_channel_3 = 0;                                                     //Remember current input state.
-		receiver_input[3] = current_time - timer_3;                             //Channel 3 is current_time - timer_3.
+		receiver_input[3] = (current_time - timer_3)>>1;                             //Channel 3 is current_time - timer_3.
 	}
 	//Channel 4=========================================
 	if(PINB & B00001000 ){                                                    //Is input 11 high?
@@ -330,7 +333,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_4 == 1){                                             //Input 11 is not high and changed from 1 to 0.
 		last_channel_4 = 0;                                                     //Remember current input state.
-		receiver_input[4] = current_time - timer_4;                             //Channel 4 is current_time - timer_4.
+		receiver_input[4] = (current_time - timer_4)>>1;                             //Channel 4 is current_time - timer_4.
 	}
 }
 
