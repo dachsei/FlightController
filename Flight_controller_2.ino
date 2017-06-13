@@ -1,5 +1,8 @@
+git status
 #include <Wire.h>
 #include <EEPROM.h>
+
+#define USEC 2;
 
 float pid_p_gain_roll = 1.2;               //Gain setting for the roll P-controller //1.2
 float pid_i_gain_roll = 0.02;              //Gain setting for the roll I-controller //0.04
@@ -97,7 +100,7 @@ void setup()
 
 	//Wait until the receiver is active and the throtle is set to the lower position.
 	int i = 0;
-	while(receiver_input_channel_3 < 990 || receiver_input_channel_3 > 1020 || receiver_input_channel_4 < 1400){
+	while(receiver_input_channel_3 < 990*USEC || receiver_input_channel_3 > 1020*USEC || receiver_input_channel_4 < 1400*USEC){
 		receiver_input_channel_3 = convert_receiver_channel(3);                 //Convert the actual receiver signals for throttle to the standard 1000 - 2000us
 		receiver_input_channel_4 = convert_receiver_channel(4);                 //Convert the actual receiver signals for yaw to the standard 1000 - 2000us
 		i++;                                                               //While waiting increment start whith every loop.
@@ -167,9 +170,9 @@ void loop()
 	float roll_level_adjust = angle_roll * 15;                                      //Calculate the roll angle correction
 
 	//For starting the motors: throttle low and yaw left (step 1).
-	if(receiver_input_channel_3 < 1050 && receiver_input_channel_4 < 1050)start = 1;
+	if(receiver_input_channel_3 < 1050*USEC && receiver_input_channel_4 < 1050*USEC)start = 1;
 	//When yaw stick is back in the center position start the motors (step 2).
-	if(start == 1 && receiver_input_channel_3 < 1050 && receiver_input_channel_4 > 1450){
+	if(start == 1 && receiver_input_channel_3 < 1050*USEC && receiver_input_channel_4 > 1450*USEC){
 		start = 2;
 
 		angle_pitch = angle_pitch_acc;                                          //Set the gyro pitch angle equal to the accelerometer pitch angle when the quadcopter is started.
@@ -184,14 +187,14 @@ void loop()
 		pid_last_yaw_d_error = 0;
 	}
 	//Stopping the motors: throttle low and yaw right.
-	if(start == 2 && receiver_input_channel_3 < 1050 && receiver_input_channel_4 > 1950)start = 0;
+	if(start == 2 && receiver_input_channel_3 < 1050*USEC && receiver_input_channel_4 > 1950*USEC)start = 0;
 
 	//The PID set point in degrees per second is determined by the roll receiver input.
 	//In the case of deviding by 3 the max roll rate is aprox 164 degrees per second ( (500-8)/3 = 164d/s ).
 	pid_roll_setpoint = 0;
 	//We need a little dead band of 16us for better results.
-	if(receiver_input_channel_1 > 1508)pid_roll_setpoint = receiver_input_channel_1 - 1508;
-	else if(receiver_input_channel_1 < 1492)pid_roll_setpoint = receiver_input_channel_1 - 1492;
+	if(receiver_input_channel_1 > 1508*USEC)pid_roll_setpoint = receiver_input_channel_1 - 1508*USEC;
+	else if(receiver_input_channel_1 < 1492*USEC)pid_roll_setpoint = receiver_input_channel_1 - 1492*USEC;
 
 	pid_roll_setpoint -= roll_level_adjust;                                   //Subtract the angle correction from the standardized receiver roll input value.
 	pid_roll_setpoint /= 3.0;                                                 //Divide the setpoint for the PID roll controller by 3 to get angles in degrees.
@@ -201,8 +204,8 @@ void loop()
 	//In the case of deviding by 3 the max pitch rate is aprox 164 degrees per second ( (500-8)/3 = 164d/s ).
 	pid_pitch_setpoint = 0;
 	//We need a little dead band of 16us for better results.
-	if(receiver_input_channel_2 > 1508)pid_pitch_setpoint = receiver_input_channel_2 - 1508;
-	else if(receiver_input_channel_2 < 1492)pid_pitch_setpoint = receiver_input_channel_2 - 1492;
+	if(receiver_input_channel_2 > 1508*USEC)pid_pitch_setpoint = receiver_input_channel_2 - 1508*USEC;
+	else if(receiver_input_channel_2 < 1492*USEC)pid_pitch_setpoint = receiver_input_channel_2 - 1492*USEC;
 
 	pid_pitch_setpoint -= pitch_level_adjust;                                  //Subtract the angle correction from the standardized receiver pitch input value.
 	pid_pitch_setpoint /= 3.0;                                                 //Divide the setpoint for the PID pitch controller by 3 to get angles in degrees.
@@ -211,9 +214,9 @@ void loop()
 	//In the case of deviding by 3 the max yaw rate is aprox 164 degrees per second ( (500-8)/3 = 164d/s ).
 	pid_yaw_setpoint = 0;
 	//We need a little dead band of 16us for better results.
-	if(receiver_input_channel_3 > 1050){ //Do not yaw when turning off the motors.
-		if(receiver_input_channel_4 > 1508)pid_yaw_setpoint = (receiver_input_channel_4 - 1508)/3.0;
-		else if(receiver_input_channel_4 < 1492)pid_yaw_setpoint = (receiver_input_channel_4 - 1492)/3.0;
+	if(receiver_input_channel_3 > 1050*USEC){ //Do not yaw when turning off the motors.
+		if(receiver_input_channel_4 > 1508*USEC)pid_yaw_setpoint = (receiver_input_channel_4 - 1508*USEC)/3.0;
+		else if(receiver_input_channel_4 < 1492*USEC)pid_yaw_setpoint = (receiver_input_channel_4 - 1492*USEC)/3.0;
 	}
 
 	calculate_pid();                                                            //PID inputs are known. So we can calculate the pid output.
@@ -232,7 +235,7 @@ void loop()
 	int throttle = receiver_input_channel_3;                                      //We need the throttle signal as a base signal.
 
 	if (start == 2){                                                          //The motors are started.
-		if (throttle > 1800) throttle = 1800;                                   //We need some room to keep full control at full throttle.
+		if (throttle > 1800*USEC) throttle = 1800*USEC;                                   //We need some room to keep full control at full throttle.
 		esc_1 = throttle - pid_output_pitch + pid_output_roll - pid_output_yaw; //Calculate the pulse for esc 1 (front-right - CCW)
 		esc_2 = throttle + pid_output_pitch + pid_output_roll + pid_output_yaw; //Calculate the pulse for esc 2 (rear-right - CW)
 		esc_3 = throttle + pid_output_pitch - pid_output_roll - pid_output_yaw; //Calculate the pulse for esc 3 (rear-left - CCW)
@@ -245,29 +248,29 @@ void loop()
 			esc_4 += esc_4 * ((1240 - battery_voltage)/(float)3500);              //Compensate the esc-4 pulse for voltage drop.
 		} 
 
-		if (esc_1 < 1100) esc_1 = 1100;                                         //Keep the motors running.
-		if (esc_2 < 1100) esc_2 = 1100;                                         //Keep the motors running.
-		if (esc_3 < 1100) esc_3 = 1100;                                         //Keep the motors running.
-		if (esc_4 < 1100) esc_4 = 1100;                                         //Keep the motors running.
+		if (esc_1 < 1100*USEC) esc_1 = 1100*USEC;                                         //Keep the motors running.
+		if (esc_2 < 1100*USEC) esc_2 = 1100*USEC;                                         //Keep the motors running.
+		if (esc_3 < 1100*USEC) esc_3 = 1100*USEC;                                         //Keep the motors running.
+		if (esc_4 < 1100*USEC) esc_4 = 1100*USEC;                                         //Keep the motors running.
 
-		if(esc_1 > 2000)esc_1 = 2000;                                           //Limit the esc-1 pulse to 2000us.
-		if(esc_2 > 2000)esc_2 = 2000;                                           //Limit the esc-2 pulse to 2000us.
-		if(esc_3 > 2000)esc_3 = 2000;                                           //Limit the esc-3 pulse to 2000us.
-		if(esc_4 > 2000)esc_4 = 2000;                                           //Limit the esc-4 pulse to 2000us.  
+		if(esc_1 > 2000*USEC)esc_1 = 2000*USEC;                                           //Limit the esc-1 pulse to 2000us.
+		if(esc_2 > 2000*USEC)esc_2 = 2000*USEC;                                           //Limit the esc-2 pulse to 2000us.
+		if(esc_3 > 2000*USEC)esc_3 = 2000*USEC;                                           //Limit the esc-3 pulse to 2000us.
+		if(esc_4 > 2000*USEC)esc_4 = 2000*USEC;                                           //Limit the esc-4 pulse to 2000us.  
 	}
 
 	else{
-		esc_1 = 1000;                                                           //If start is not 2 keep a 1000us pulse for ess-1.
-		esc_2 = 1000;                                                           //If start is not 2 keep a 1000us pulse for ess-2.
-		esc_3 = 1000;                                                           //If start is not 2 keep a 1000us pulse for ess-3.
-		esc_4 = 1000;                                                           //If start is not 2 keep a 1000us pulse for ess-4.
+		esc_1 = 1000*USEC;                                                           //If start is not 2 keep a 1000us pulse for ess-1.
+		esc_2 = 1000*USEC;                                                           //If start is not 2 keep a 1000us pulse for ess-2.
+		esc_3 = 1000*USEC;                                                           //If start is not 2 keep a 1000us pulse for ess-3.
+		esc_4 = 1000*USEC;                                                           //If start is not 2 keep a 1000us pulse for ess-4.
 	}
 
-	if(TCNT1 - loop_timer > (4050<<1))digitalWrite(12, HIGH);                   //Turn on the LED if the loop time exceeds 4050us.
+	if(TCNT1 - loop_timer > (4050*USEC))digitalWrite(12, HIGH);                   //Turn on the LED if the loop time exceeds 4050us.
 
 	//All the information for controlling the motor's is available.
 	//The refresh rate is 250Hz. That means the esc's need there pulse every 4ms.
-	while(TCNT1 - loop_timer < (4000<<1));                                      //We wait until 4000us are passed.
+	while(TCNT1 - loop_timer < (4000*USEC);                                      //We wait until 4000us are passed.
 	loop_timer = TCNT1;                                                    //Set the timer for the next loop.
 
 	uint16_t esc_timer = TCNT1;
@@ -278,7 +281,7 @@ void loop()
 	gyro_signalen();
 
 	while(PORTD >= 16){                                                       //Stay in this loop until output 4,5,6 and 7 are low.
-		uint16_t onTime = (TCNT1 - esc_timer)>>1;                                              //Read the current time.
+		uint16_t onTime = TCNT1 - esc_timer;                                              //Read the current time.
 		if(onTime >= esc_1)PORTD &= B11101111;                //Set digital output 4 to low if the time is expired.
 		if(onTime >= esc_2)PORTD &= B11011111;                //Set digital output 5 to low if the time is expired.
 		if(onTime >= esc_3)PORTD &= B10111111;                //Set digital output 6 to low if the time is expired.
@@ -301,7 +304,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_1 == 1){                                             //Input 8 is not high and changed from 1 to 0.
 		last_channel_1 = 0;                                                     //Remember current input state.
-		receiver_input[1] = (current_time - timer_1)>>1;                             //Channel 1 is current_time - timer_1.
+		receiver_input[1] = current_time - timer_1;                             //Channel 1 is current_time - timer_1.
 	}
 	//Channel 2=========================================
 	if(PINB & B00000010 ){                                                    //Is input 9 high?
@@ -312,7 +315,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_2 == 1){                                             //Input 9 is not high and changed from 1 to 0.
 		last_channel_2 = 0;                                                     //Remember current input state.
-		receiver_input[2] = (current_time - timer_2)>>1;                             //Channel 2 is current_time - timer_2.
+		receiver_input[2] = current_time - timer_2;                             //Channel 2 is current_time - timer_2.
 	}
 	//Channel 3=========================================
 	if(PINB & B00000100 ){                                                    //Is input 10 high?
@@ -323,7 +326,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_3 == 1){                                             //Input 10 is not high and changed from 1 to 0.
 		last_channel_3 = 0;                                                     //Remember current input state.
-		receiver_input[3] = (current_time - timer_3)>>1;                             //Channel 3 is current_time - timer_3.
+		receiver_input[3] = current_time - timer_3;                             //Channel 3 is current_time - timer_3.
 	}
 	//Channel 4=========================================
 	if(PINB & B00001000 ){                                                    //Is input 11 high?
@@ -334,7 +337,7 @@ ISR(PCINT0_vect)
 	}
 	else if(last_channel_4 == 1){                                             //Input 11 is not high and changed from 1 to 0.
 		last_channel_4 = 0;                                                     //Remember current input state.
-		receiver_input[4] = (current_time - timer_4)>>1;                             //Channel 4 is current_time - timer_4.
+		receiver_input[4] = current_time - timer_4;                             //Channel 4 is current_time - timer_4.
 	}
 }
 
